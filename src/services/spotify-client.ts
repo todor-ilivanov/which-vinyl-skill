@@ -12,6 +12,40 @@ export interface RecentlyPlayedTrack extends SpotifyTrack {
   playedAt: string;
 }
 
+export interface SpotifyArtist {
+  name: string;
+  genres: string[];
+  popularity: number;
+  followers: number;
+  spotifyId: string;
+}
+
+export interface SavedAlbum {
+  name: string;
+  artist: string;
+  releaseDate: string;
+  totalTracks: number;
+  addedAt: string;
+  spotifyId: string;
+}
+
+export interface SavedTrack {
+  name: string;
+  artist: string;
+  album: string;
+  addedAt: string;
+  spotifyId: string;
+}
+
+export interface UserPlaylist {
+  name: string;
+  id: string;
+  trackCount: number;
+  owner: string;
+  isPublic: boolean;
+  description: string | null;
+}
+
 interface SpotifyTokens {
   accessToken: string;
   refreshToken: string;
@@ -203,6 +237,139 @@ export class SpotifyClient {
       artist: item.track.artists[0]?.name || "Unknown",
       popularity: item.track.popularity,
       playedAt: item.played_at,
+    }));
+  }
+
+  async getTopArtists(
+    timeRange: "short_term" | "medium_term" | "long_term" = "short_term",
+    limit: number = 20
+  ): Promise<SpotifyArtist[]> {
+    interface SpotifyApiArtist {
+      id: string;
+      name: string;
+      genres: string[];
+      popularity: number;
+      followers: { total: number };
+    }
+
+    const data = await this.apiRequest<{ items: SpotifyApiArtist[] }>(
+      `/me/top/artists?time_range=${timeRange}&limit=${limit}`
+    );
+
+    return data.items.map((artist) => ({
+      spotifyId: artist.id,
+      name: artist.name,
+      genres: artist.genres,
+      popularity: artist.popularity,
+      followers: artist.followers.total,
+    }));
+  }
+
+  async getSavedAlbums(limit: number = 50, offset: number = 0): Promise<SavedAlbum[]> {
+    interface SpotifyApiSavedAlbum {
+      added_at: string;
+      album: {
+        id: string;
+        name: string;
+        artists: Array<{ name: string }>;
+        release_date: string;
+        total_tracks: number;
+      };
+    }
+
+    const data = await this.apiRequest<{ items: SpotifyApiSavedAlbum[] }>(
+      `/me/albums?limit=${limit}&offset=${offset}`
+    );
+
+    return data.items.map((item) => ({
+      spotifyId: item.album.id,
+      name: item.album.name,
+      artist: item.album.artists[0]?.name || "Unknown",
+      releaseDate: item.album.release_date,
+      totalTracks: item.album.total_tracks,
+      addedAt: item.added_at,
+    }));
+  }
+
+  async getFollowedArtists(limit: number = 50, after?: string): Promise<{ artists: SpotifyArtist[]; nextCursor: string | null }> {
+    interface SpotifyApiArtist {
+      id: string;
+      name: string;
+      genres: string[];
+      popularity: number;
+      followers: { total: number };
+    }
+
+    interface FollowedArtistsResponse {
+      artists: {
+        items: SpotifyApiArtist[];
+        cursors: { after: string | null };
+      };
+    }
+
+    const endpoint = after
+      ? `/me/following?type=artist&limit=${limit}&after=${after}`
+      : `/me/following?type=artist&limit=${limit}`;
+
+    const data = await this.apiRequest<FollowedArtistsResponse>(endpoint);
+
+    return {
+      artists: data.artists.items.map((artist) => ({
+        spotifyId: artist.id,
+        name: artist.name,
+        genres: artist.genres,
+        popularity: artist.popularity,
+        followers: artist.followers.total,
+      })),
+      nextCursor: data.artists.cursors.after,
+    };
+  }
+
+  async getSavedTracks(limit: number = 50, offset: number = 0): Promise<SavedTrack[]> {
+    interface SpotifyApiSavedTrack {
+      added_at: string;
+      track: {
+        id: string;
+        name: string;
+        album: { name: string };
+        artists: Array<{ name: string }>;
+      };
+    }
+
+    const data = await this.apiRequest<{ items: SpotifyApiSavedTrack[] }>(
+      `/me/tracks?limit=${limit}&offset=${offset}`
+    );
+
+    return data.items.map((item) => ({
+      spotifyId: item.track.id,
+      name: item.track.name,
+      album: item.track.album.name,
+      artist: item.track.artists[0]?.name || "Unknown",
+      addedAt: item.added_at,
+    }));
+  }
+
+  async getUserPlaylists(limit: number = 50, offset: number = 0): Promise<UserPlaylist[]> {
+    interface SpotifyApiPlaylist {
+      id: string;
+      name: string;
+      tracks: { total: number };
+      owner: { display_name: string };
+      public: boolean;
+      description: string | null;
+    }
+
+    const data = await this.apiRequest<{ items: SpotifyApiPlaylist[] }>(
+      `/me/playlists?limit=${limit}&offset=${offset}`
+    );
+
+    return data.items.map((playlist) => ({
+      id: playlist.id,
+      name: playlist.name,
+      trackCount: playlist.tracks.total,
+      owner: playlist.owner.display_name,
+      isPublic: playlist.public,
+      description: playlist.description,
     }));
   }
 }

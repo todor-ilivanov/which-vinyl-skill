@@ -6,7 +6,7 @@ import { getApp, startServer, stopServer } from './shared-server.js';
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
 const REDIRECT_URI = 'http://127.0.0.1:3000/auth/spotify/callback';
-const SCOPES = 'user-read-email user-top-read user-read-recently-played';
+const SCOPES = 'user-read-email user-top-read user-read-recently-played user-library-read user-follow-read playlist-read-private';
 
 function generateCodeVerifier(): string {
   return crypto.randomBytes(64).toString('base64url');
