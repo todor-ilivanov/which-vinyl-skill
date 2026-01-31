@@ -2,112 +2,79 @@
 
 MCP (Model Context Protocol) server for vinyl recommendations using Spotify and Discogs data.
 
-> **Quick Start:** See [QUICK_START.md](./QUICK_START.md) for a streamlined 3-step setup guide.
+## Quick Start
 
-## Features
+Get the Which Vinyl MCP server running in 3 steps.
 
-- **Spotify Integration**: Access top tracks and recently played songs
-- **Discogs Integration**: Query your vinyl collection
-- **Secure Token Storage**: OAuth tokens stored in system keychain (macOS Keychain, Linux libsecret, Windows Credential Manager)
-- **Automatic Token Refresh**: Spotify tokens refresh automatically when expired
+### Step 1: Create OAuth Apps
 
-## Optional Services
+Create OAuth credentials for the service(s) you want to use (Spotify, Discogs, or both):
 
-You can use this MCP server with just Spotify, just Discogs, or both:
+**Spotify:**
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Click **Create App**, fill in name/description
+3. Add Redirect URI: `http://127.0.0.1:3000/auth/spotify/callback`
+4. Check "Web API" under APIs used
+5. Copy your **Client ID** and **Client Secret**
 
-- **Spotify only**: Get recommendations based on your listening history
-- **Discogs only**: Query your vinyl collection
-- **Both**: Get personalized recommendations that match your collection
+**Discogs:**
+1. Go to [Discogs Developer Settings](https://www.discogs.com/settings/developers)
+2. Click **Create an Application**
+3. Set Callback URL: `http://127.0.0.1:3000/auth/discogs/callback`
+4. Copy your **Consumer Key** and **Consumer Secret**
 
-The setup wizard will ask which services you want to configure.
-
-## Setup
-
-### 1. Install Dependencies
+### Step 2: Run Setup
 
 ```bash
 npm install
+npm run setup
 ```
 
-### 2. Configure OAuth Apps
+The setup wizard will:
+- Ask which services you want to configure
+- Prompt for your OAuth credentials
+- Open your browser for authentication
+- Build the MCP server
+- Register the MCP server with Claude Code
 
-#### Spotify OAuth App
+### Step 3: Restart Claude Code
 
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new app
-3. Add redirect URI: `http://127.0.0.1:3000/auth/spotify/callback`
-4. Copy Client ID and Client Secret
+Restart Claude Code, then try: **"What vinyl should I play?"**
 
-#### Discogs OAuth App
+---
 
-1. Go to [Discogs Developer Settings](https://www.discogs.com/settings/developers)
-2. Create a new app
-3. Add callback URL: `http://127.0.0.1:3000/auth/discogs/callback`
-4. Copy Consumer Key and Consumer Secret
+## Credentials & Secrets Management
 
-### 3. Set Environment Variables
+### What credentials are needed
 
-Create a `.env` file:
+| Credential Type | Purpose | Example |
+|-----------------|---------|---------|
+| Client credentials | Identify your OAuth app | `SPOTIFY_CLIENT_ID`, `DISCOGS_CONSUMER_KEY` |
+| Access tokens | Authorize API requests on your behalf | OAuth tokens from login flow |
 
+### Where credentials are stored
+
+**Client credentials** are stored in `.env`:
 ```bash
-# Spotify credentials
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
-
-# Discogs credentials
 DISCOGS_CONSUMER_KEY=your_discogs_consumer_key
 DISCOGS_CONSUMER_SECRET=your_discogs_consumer_secret
 ```
 
-### 4. Authenticate
+**Access tokens** are stored in your system keychain:
+- **macOS**: Keychain Access (service: `vinyl-vibe-mcp`)
+- **Linux**: libsecret (GNOME Keyring / KDE Wallet)
+- **Windows**: Credential Manager
 
-Run the OAuth authentication flow to obtain and store access tokens:
+### Security model
 
-```bash
-# Authenticate with both services
-npm run auth:all
+- OAuth flows use **PKCE** (Proof Key for Code Exchange) for Spotify
+- Callback server binds to **localhost only** (127.0.0.1)
+- **No tokens are written to files** - all access tokens stay in the secure keychain
+- Tokens are encrypted by the system credential manager
 
-# Or authenticate individually
-npm run auth:spotify
-npm run auth:discogs
-```
-
-This will:
-1. Open your browser for Spotify login
-2. Open your browser for Discogs authorization
-3. Store tokens securely in your system keychain
-
-**Note:** Tokens are stored in your system's secure credential storage, not in files. You only need to authenticate once (or when tokens are revoked).
-
-### 5. Build and Run
-
-```bash
-npm run build
-npm start
-```
-
-## Usage with Claude Code
-
-Add to your Claude Code settings (`~/.claude.json` or `.claude/settings.json`):
-
-```json
-{
-  "mcpServers": {
-    "which-vinyl": {
-      "command": "node",
-      "args": ["/absolute/path/to/vinyl-vibe/mcp-server/dist/index.js"],
-      "env": {
-        "SPOTIFY_CLIENT_ID": "your_client_id",
-        "SPOTIFY_CLIENT_SECRET": "your_client_secret",
-        "DISCOGS_CONSUMER_KEY": "your_consumer_key",
-        "DISCOGS_CONSUMER_SECRET": "your_consumer_secret"
-      }
-    }
-  }
-}
-```
-
-**Important:** Only client credentials are needed in the config. Access tokens are loaded automatically from the system keychain.
+---
 
 ## Available Tools
 
@@ -133,22 +100,70 @@ Get user's vinyl collection from Discogs.
 **Parameters:**
 - `limit` (optional): Maximum number of releases to return
 
+---
+
+## Manual Setup
+
+For advanced users who prefer manual configuration over the setup wizard.
+
+### Individual auth commands
+
+```bash
+# Authenticate with both services
+npm run auth:all
+
+# Or authenticate individually
+npm run auth:spotify
+npm run auth:discogs
+```
+
+### Environment variables
+
+Create a `.env` file manually:
+
+```bash
+# Spotify credentials
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+
+# Discogs credentials
+DISCOGS_CONSUMER_KEY=your_discogs_consumer_key
+DISCOGS_CONSUMER_SECRET=your_discogs_consumer_secret
+```
+
+### Claude Code configuration
+
+Add to your Claude Code settings (`~/.claude.json` or `.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "which-vinyl": {
+      "command": "node",
+      "args": ["/absolute/path/to/which-vinyl-skill/dist/index.js"],
+      "env": {
+        "SPOTIFY_CLIENT_ID": "your_client_id",
+        "SPOTIFY_CLIENT_SECRET": "your_client_secret",
+        "DISCOGS_CONSUMER_KEY": "your_consumer_key",
+        "DISCOGS_CONSUMER_SECRET": "your_consumer_secret"
+      }
+    }
+  }
+}
+```
+
+**Note:** Only client credentials are needed in the config. Access tokens are loaded automatically from the system keychain.
+
+---
+
 ## Token Management
 
-### Where are tokens stored?
-
-Tokens are stored in your operating system's secure credential storage:
-
-- **macOS**: Keychain Access (service: `vinyl-vibe-mcp`)
-- **Linux**: libsecret (GNOME Keyring / KDE Wallet)
-- **Windows**: Credential Manager
-
-### Token refresh
+### Token refresh behavior
 
 - **Spotify**: Access tokens expire after 1 hour and are automatically refreshed using the refresh token
 - **Discogs**: OAuth 1.0a tokens never expire
 
-### Re-authenticate
+### Re-authentication
 
 If you need to re-authenticate (e.g., revoked tokens):
 
@@ -156,7 +171,7 @@ If you need to re-authenticate (e.g., revoked tokens):
 npm run auth:all
 ```
 
-### Add a service later
+### Adding services later
 
 Started with just one service? Add the other anytime:
 
@@ -165,9 +180,9 @@ npm run auth:discogs  # Add Discogs
 npm run auth:spotify  # Add Spotify
 ```
 
-The CLI will prompt for missing credentials and save them to `.env`.
+The CLI will prompt for missing credentials and save them to `.env`. After adding a service, restart Claude Code to use the new tools.
 
-### Clear tokens
+### Clearing tokens
 
 To manually clear stored tokens, use your system's credential manager:
 
@@ -181,6 +196,8 @@ open -a "Keychain Access"
 ```bash
 secret-tool search service vinyl-vibe-mcp
 ```
+
+---
 
 ## Development
 
@@ -206,6 +223,8 @@ src/
 └── index.ts                  # MCP server entry point
 ```
 
+---
+
 ## Troubleshooting
 
 ### "No Spotify tokens found"
@@ -214,19 +233,20 @@ Run `npm run auth:spotify` to authenticate.
 
 ### "Port 3000 already in use"
 
-Another process is using port 3000. Stop it or modify the `REDIRECT_URI` in the OAuth files.
+Another process is using port 3000. Stop it or wait a moment and try again.
 
-### "Failed to get request token"
+### "Failed to get request token" / OAuth error
 
-Check that your OAuth app credentials are correct and the callback URL `http://127.0.0.1:3000/auth/spotify/callback` (or `http://127.0.0.1:3000/auth/discogs/callback` for Discogs) is registered in your OAuth app settings.
+Check that:
+1. Your OAuth app credentials are correct
+2. The callback URLs match exactly:
+   - Spotify: `http://127.0.0.1:3000/auth/spotify/callback`
+   - Discogs: `http://127.0.0.1:3000/auth/discogs/callback`
 
 ### Token refresh fails
 
 Your refresh token may have been revoked. Re-authenticate with `npm run auth:spotify`.
 
-## Security
+### Need to re-authenticate?
 
-- Tokens are stored encrypted in the system keychain
-- OAuth flows use PKCE (Proof Key for Code Exchange) for Spotify
-- Callback server binds to localhost only (127.0.0.1)
-- No tokens are written to files or logs
+Run `npm run auth:all` to re-authenticate all services.
