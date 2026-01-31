@@ -1,8 +1,11 @@
-import OAuth from 'oauth-1.0a';
+import { createRequire } from 'module';
 import crypto from 'crypto';
 import open from 'open';
 import { saveDiscogsTokens } from './token-storage.js';
 import { getApp, startServer, stopServer } from './shared-server.js';
+
+const require = createRequire(import.meta.url);
+const OAuth = require('oauth-1.0a');
 
 const CONSUMER_KEY = process.env.DISCOGS_CONSUMER_KEY!;
 const CONSUMER_SECRET = process.env.DISCOGS_CONSUMER_SECRET!;
@@ -11,7 +14,7 @@ const REDIRECT_URI = 'http://127.0.0.1:3000/auth/discogs/callback';
 const oauth = new OAuth({
   consumer: { key: CONSUMER_KEY, secret: CONSUMER_SECRET },
   signature_method: 'HMAC-SHA1',
-  hash_function(baseString, key) {
+  hash_function(baseString: string, key: string) {
     return crypto.createHmac('sha1', key).update(baseString).digest('base64');
   }
 });

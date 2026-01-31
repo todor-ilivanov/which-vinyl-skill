@@ -1,6 +1,9 @@
-import OAuth from "oauth-1.0a";
+import { createRequire } from "module";
 import crypto from "crypto";
 import { loadDiscogsTokens } from '../auth/token-storage.js';
+
+const require = createRequire(import.meta.url);
+const OAuth = require("oauth-1.0a");
 
 export interface DiscogsRelease {
   releaseId: string;
@@ -20,7 +23,7 @@ interface DiscogsConfig {
 
 export class DiscogsClient {
   private config: DiscogsConfig;
-  private oauth: OAuth;
+  private oauth: any;
   private tokensLoaded: boolean = false;
 
   constructor() {
@@ -38,7 +41,7 @@ export class DiscogsClient {
         secret: this.config.consumerSecret,
       },
       signature_method: "HMAC-SHA1",
-      hash_function(baseString, key) {
+      hash_function(baseString: string, key: string) {
         return crypto
           .createHmac("sha1", key)
           .update(baseString)
