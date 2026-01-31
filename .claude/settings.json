@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "which-vinyl": {
+      "command": "node",
+      "args": [
+        "/Users/todor.ilivanov/dev2/spotifai/vinyl-vibe/mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
