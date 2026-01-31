@@ -12,33 +12,25 @@ import {
   spotifyRecentlyPlayedSchema,
 } from "./tools/spotify-recently-played.js";
 import {
-  spotifyTopArtistsTool,
-  spotifyTopArtistsSchema,
-} from "./tools/spotify-top-artists.js";
-import {
-  spotifySavedAlbumsTool,
-  spotifySavedAlbumsSchema,
-} from "./tools/spotify-saved-albums.js";
-import {
-  spotifySavedTracksTool,
-  spotifySavedTracksSchema,
-} from "./tools/spotify-saved-tracks.js";
-import {
-  spotifyFollowedArtistsTool,
-  spotifyFollowedArtistsSchema,
-} from "./tools/spotify-followed-artists.js";
-import {
-  spotifyPlaylistsTool,
-  spotifyPlaylistsSchema,
-} from "./tools/spotify-playlists.js";
-import {
-  spotifyListeningStatsTool,
-  spotifyListeningStatsSchema,
-} from "./tools/spotify-listening-stats.js";
-import {
   discogsCollectionTool,
   discogsCollectionSchema,
 } from "./tools/discogs-collection.js";
+import {
+  discogsWantlistTool,
+  discogsWantlistSchema,
+} from "./tools/discogs-wantlist.js";
+import {
+  collectionValueTool,
+  collectionValueSchema,
+} from "./tools/discogs-collection-value.js";
+import {
+  vinylRecommendationsTool,
+  vinylRecommendationsSchema,
+} from "./tools/vinyl-recommendations.js";
+import {
+  collectionAnalysisTool,
+  collectionAnalysisSchema,
+} from "./tools/collection-analysis.js";
 
 const server = new McpServer({
   name: "which-vinyl",
@@ -63,48 +55,6 @@ if (hasSpotifyCredentials) {
     spotifyRecentlyPlayedSchema,
     spotifyRecentlyPlayedTool.handler
   );
-
-  server.tool(
-    spotifyTopArtistsTool.name,
-    spotifyTopArtistsTool.description,
-    spotifyTopArtistsSchema,
-    spotifyTopArtistsTool.handler
-  );
-
-  server.tool(
-    spotifySavedAlbumsTool.name,
-    spotifySavedAlbumsTool.description,
-    spotifySavedAlbumsSchema,
-    spotifySavedAlbumsTool.handler
-  );
-
-  server.tool(
-    spotifySavedTracksTool.name,
-    spotifySavedTracksTool.description,
-    spotifySavedTracksSchema,
-    spotifySavedTracksTool.handler
-  );
-
-  server.tool(
-    spotifyFollowedArtistsTool.name,
-    spotifyFollowedArtistsTool.description,
-    spotifyFollowedArtistsSchema,
-    spotifyFollowedArtistsTool.handler
-  );
-
-  server.tool(
-    spotifyPlaylistsTool.name,
-    spotifyPlaylistsTool.description,
-    spotifyPlaylistsSchema,
-    spotifyPlaylistsTool.handler
-  );
-
-  server.tool(
-    spotifyListeningStatsTool.name,
-    spotifyListeningStatsTool.description,
-    spotifyListeningStatsSchema,
-    spotifyListeningStatsTool.handler
-  );
 }
 
 if (hasDiscogsCredentials) {
@@ -113,6 +63,39 @@ if (hasDiscogsCredentials) {
     discogsCollectionTool.description,
     discogsCollectionSchema,
     discogsCollectionTool.handler
+  );
+
+  server.tool(
+    discogsWantlistTool.name,
+    discogsWantlistTool.description,
+    discogsWantlistSchema,
+    discogsWantlistTool.handler
+  );
+
+  server.tool(
+    collectionValueTool.name,
+    collectionValueTool.description,
+    collectionValueSchema,
+    collectionValueTool.handler
+  );
+}
+
+// Cross-service tools - only available when both Spotify and Discogs are configured
+const hasBothServices = hasSpotifyCredentials && hasDiscogsCredentials;
+
+if (hasBothServices) {
+  server.tool(
+    vinylRecommendationsTool.name,
+    vinylRecommendationsTool.description,
+    vinylRecommendationsSchema,
+    vinylRecommendationsTool.handler
+  );
+
+  server.tool(
+    collectionAnalysisTool.name,
+    collectionAnalysisTool.description,
+    collectionAnalysisSchema,
+    collectionAnalysisTool.handler
   );
 }
 

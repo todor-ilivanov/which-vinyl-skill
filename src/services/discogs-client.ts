@@ -7,10 +7,32 @@ const OAuth = require("oauth-1.0a");
 
 export interface DiscogsRelease {
   releaseId: string;
-  artist: string;
+  artist: string;         // Primary artist
+  artists: string[];      // All artists (for collaborations)
   album: string;
   year: number | null;
   dateAdded: string | null;
+  thumb: string | null;   // Thumbnail URL
+  genres: string[];       // e.g., ["Rock", "Pop"]
+  styles: string[];       // e.g., ["Indie Rock", "Shoegaze"]
+  formats: string[];      // e.g., ["LP", "Album"]
+}
+
+export interface DiscogsWant {
+  releaseId: string;
+  artist: string;
+  artists: string[];
+  album: string;
+  year: number | null;
+  dateAdded: string | null;
+  notes: string | null;    // User's notes about why they want it
+  rating: number | null;   // User's desired rating
+}
+
+export interface CollectionValue {
+  minimum: string;   // "$1,234.56"
+  median: string;
+  maximum: string;
 }
 
 interface DiscogsConfig {
@@ -127,6 +149,10 @@ export class DiscogsClient {
         title: string;
         year: number;
         artists: Array<{ name: string }>;
+        thumb: string;
+        genres: string[];
+        styles: string[];
+        formats: Array<{ name: string; descriptions?: string[] }>;
       };
     }
 
@@ -151,12 +177,23 @@ export class DiscogsClient {
 
       for (const release of data.releases) {
         const info = release.basic_information;
+        const formatNames = info.formats?.flatMap(f => {
+          const names = [f.name];
+          if (f.descriptions) names.push(...f.descriptions);
+          return names;
+        }) || [];
+
         allReleases.push({
           releaseId: String(info.id),
           artist: info.artists[0]?.name || "Unknown",
+          artists: info.artists.map(a => a.name),
           album: info.title,
           year: info.year || null,
           dateAdded: release.date_added || null,
+          thumb: info.thumb || null,
+          genres: info.genres || [],
+          styles: info.styles || [],
+          formats: formatNames,
         });
 
         if (limit && allReleases.length >= limit) {
@@ -171,6 +208,100 @@ export class DiscogsClient {
     }
 
     return { collection: allReleases, totalCount };
+  }
+
+  async getWantlist(
+    limit?: number
+  ): Promise<{ wantlist: DiscogsWant[]; totalCount: number }> {
+    await this.loadTokens();
+
+    const username = this.config.username;
+    if (!username) {
+      throw new Error("DISCOGS_USERNAME is required");
+    }
+
+    interface DiscogsApiWant {
+      id: number;
+      date_added: string;
+      notes: string;
+      rating: number;
+      basic_information: {
+        id: number;
+        title: string;
+        year: number;
+        artists: Array<{ name: string }>;
+      };
+    }
+
+    interface DiscogsApiResponse {
+      pagination: {
+        pages: number;
+        items: number;
+      };
+      wants: DiscogsApiWant[];
+    }
+
+    const allWants: DiscogsWant[] = [];
+    let page = 1;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await this.apiRequest<DiscogsApiResponse>(
+        `/users/${username}/wants?page=${page}&per_page=100`
+      );
+
+      totalCount = data.pagination.items;
+
+      for (const want of data.wants) {
+        const info = want.basic_information;
+        allWants.push({
+          releaseId: String(info.id),
+          artist: info.artists[0]?.name || "Unknown",
+          artists: info.artists.map(a => a.name),
+          album: info.title,
+          year: info.year || null,
+          dateAdded: want.date_added || null,
+          notes: want.notes || null,
+          rating: want.rating || null,
+        });
+
+        if (limit && allWants.length >= limit) {
+          return { wantlist: allWants.slice(0, limit), totalCount };
+        }
+      }
+
+      if (page >= data.pagination.pages) {
+        break;
+      }
+      page++;
+    }
+
+    return { wantlist: allWants, totalCount };
+  }
+
+  async getCollectionValue(): Promise<CollectionValue> {
+    await this.loadTokens();
+
+    const username = this.config.username;
+    if (!username) {
+      throw new Error("DISCOGS_USERNAME is required");
+    }
+
+    interface DiscogsValueResponse {
+      minimum: string;
+      median: string;
+      maximum: string;
+    }
+
+    const data = await this.apiRequest<DiscogsValueResponse>(
+      `/users/${username}/collection/value`
+    );
+
+    return {
+      minimum: data.minimum,
+      median: data.median,
+      maximum: data.maximum,
+    };
   }
 }
 

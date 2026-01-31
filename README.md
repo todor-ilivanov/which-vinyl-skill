@@ -29,14 +29,82 @@ Try: **"What vinyl should I play?"**
 
 ## Available Tools
 
+### Spotify Tools
+
 **`get_spotify_top_tracks`** - Get user's top tracks
 Params: `time_range` (short_term|medium_term|long_term), `limit` (default: 20)
 
 **`get_spotify_recently_played`** - Get recently played tracks
 Params: `limit` (default: 50)
 
-**`get_discogs_collection`** - Get user's vinyl collection
+### Discogs Tools
+
+**`get_discogs_collection`** - Get user's vinyl collection with full metadata
 Params: `limit`
+Returns: Artist(s), album, year, date added, thumbnail, genres, styles, formats
+
+**`get_discogs_wantlist`** - Get albums user wants to add to collection
+Params: `limit`
+Returns: Artist(s), album, year, date added, user notes, rating
+
+**`get_collection_value`** - Get collection statistics and estimated value
+Params: none
+Returns: Estimated value (min/median/max), format distribution, decade breakdown
+
+### Cross-Service Tools
+
+*Require both Spotify and Discogs to be configured.*
+
+**`get_vinyl_recommendations`** - Find albums you listen to but don't own on vinyl
+Params: `source` (top_tracks|top_artists|saved_albums|recently_played), `time_range`, `limit`
+Returns: Recommendations with reasons, aggregated by artist for visualization
+
+**`get_collection_analysis`** - Analyze collection vs listening habits
+Params: `mode` (insights|comparison|full), `time_range` (short_term|medium_term|long_term)
+Returns: Alignment scores, overlap/gaps, most/least played owned albums, Venn diagram data
+
+---
+
+## Example Use Cases
+
+### Getting Recommendations
+
+| What to Ask | What Happens |
+|-------------|--------------|
+| "What vinyl should I buy next?" | Analyzes top tracks → recommends albums not in your collection |
+| "Recommend records based on what I've been playing lately" | Uses recently played → suggests current obsessions to own |
+| "What albums from my favorite artists am I missing?" | Uses top artists → finds gaps in your collection |
+
+### Collection Analysis
+
+| What to Ask | What Happens |
+|-------------|--------------|
+| "How well does my vinyl collection match my taste?" | Returns alignment score (0-100%) with detailed breakdown |
+| "What records am I not playing?" | Shows owned albums with low/no Spotify plays |
+| "Which albums do I listen to most that I actually own?" | Lists top played records from your collection |
+
+### Collection Stats
+
+| What to Ask | What Happens |
+|-------------|--------------|
+| "What's my vinyl collection worth?" | Returns min/median/max value estimates |
+| "Show me my collection by decade" | Decade breakdown (60s, 70s, 80s, etc.) |
+| "What formats do I own?" | Distribution of LPs, 7", 12", CDs, etc. |
+
+### Listening Insights
+
+| What to Ask | What Happens |
+|-------------|--------------|
+| "What have I been listening to?" | Shows recent plays with timestamps |
+| "What are my all-time favorite tracks?" | Top tracks over long term |
+| "What's on my Discogs wantlist?" | Albums you've marked to buy |
+
+### Visualization Examples
+
+The analysis tools return data structured for visualization:
+- **Venn diagrams**: Owned vs. listened overlap
+- **Timeline charts**: When you added records to your collection
+- **Genre breakdowns**: What styles dominate your collection
 
 ---
 
